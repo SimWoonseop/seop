@@ -7,6 +7,9 @@ class MyDialog(QWidget):
 		super().__init__()
 		self.initUI()
 		self.total = {}
+		self.id = 0
+		self.setID(id)
+		self.getID()
 
 	def initUI(self):
 		self.label_id = QLabel('ID', self)
@@ -23,7 +26,7 @@ class MyDialog(QWidget):
 		self.lineEdit_name = QLineEdit(self)
 		self.lineEdit_name.move(150, 220)
 
-		self.btn_save = QPushButton('저장', self)
+		self.btn_save = QPushButton('추가', self)
 		self.btn_save.move(600,140)
 		self.btn_save.clicked.connect(self.Button_Save)
 
@@ -95,33 +98,50 @@ class MyDialog(QWidget):
 		self.ChangeDlg_lineEdit_name.setEnabled(False)
 
 		self.ChangeDlg_btn_Change = QPushButton('수정', self.ChangeDlg)
-		self.ChangeDlg_btn_Change.move(300,50)
+		self.ChangeDlg_btn_Change.move(300,80)
 		self.ChangeDlg_btn_Change.clicked.connect(self.ChangeDlg_Button_Change)
+
+		self.ChangeDlg_btn_Fine = QPushButton('확인', self.ChangeDlg)
+		self.ChangeDlg_btn_Fine.move(300,50)
+		self.ChangeDlg_btn_Fine.clicked.connect(self.ChangeDlg_Button_test)
 
 	
 
-	# Change Dlg
+	# Change Dlg----------------------------------------------------------------------------------------------------------------------------------------------------
 	def ChangeDlg_show(self):
 		self.ChangeDlg.setWindowTitle('Change')
 		self.ChangeDlg.setGeometry(1200,800,600,240)
 		self.ChangeDlg.show()
 
-	def ChangeDlg_Button_Change(self):
+	def ChangeDlg_Button_test(self):
 		change_id = self.ChangeDlg_lineEdit_id.text()
 		if change_id in self.total.keys():
 			message = QMessageBox.question(self,'Change', f'Do you want to change the information of ID {change_id}?', QMessageBox.Yes | QMessageBox.No)
 			if message == QMessageBox.Yes:
 				self.ChangeDlg_lineEdit_name.setEnabled(True)
-				change_name = self.ChangeDlg_lineEdit_name.text()
-				self.total[change_id] = [change_name]
+				self.setID(change_id)
 		else:
 			QMessageBox.warning(self,'Change', f'ID {change_id} does not exist!')
+
+	def ChangeDlg_Button_Change(self):
+		change_id = self.getID()
+		change_name = self.ChangeDlg_lineEdit_name.text()
+		message = QMessageBox.question(self,'Change', f'Do you want to change the information {change_name}?', QMessageBox.Yes | QMessageBox.No)
+		if message == QMessageBox.Yes:
+			self.total[change_id] = [change_name]
 
 	# Main Dlg----------------------------------------------------------------------------------------------------------------------------------------------------
 	def Button_Save(self):
 		id = self.lineEdit_id.text()
+		if id == '':
+			QMessageBox.warning(self,'ID', 'ID를 입력해주세요')
+
 		name = self.lineEdit_name.text()
-		self.total[id] = [name]
+		if name == '':
+			QMessageBox.warning(self,'이름', '이름을 입력해주세요')
+		
+		if id != '' and name != '':
+			self.total[id] = [name]
 
 
 	def Button_Delete(self):
@@ -156,6 +176,12 @@ class MyDialog(QWidget):
 				del self.total[delete_id]
 
 
+	def setID(self, id):
+		self.id = id
+
+	def getID(self):
+		return self.id
+	
 if __name__ == '__main__':
    app = QApplication(sys.argv)
    ex = MyDialog()
