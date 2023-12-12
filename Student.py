@@ -1,4 +1,5 @@
 import sys
+import sqltest
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt
 
@@ -142,6 +143,7 @@ class MyDialog(QWidget):
 		
 		if id != '' and name != '':
 			self.total[id] = [name]
+			sqltest.intoDB(id, name)
 
 
 	def Button_Delete(self):
@@ -174,6 +176,7 @@ class MyDialog(QWidget):
 			message = QMessageBox.question(self,'Delete', f'Are you want to Delete ID {delete_id}?', QMessageBox.Yes | QMessageBox.No)
 			if message == QMessageBox.Yes:
 				del self.total[delete_id]
+				sqltest.deleteDB(delete_id)
 
 
 	def setID(self, id):
