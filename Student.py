@@ -1,23 +1,25 @@
 import sys
+
+from PyQt5.QtGui import QCloseEvent
 import sqltest
 from PyQt5.QtWidgets import *
 from PyQt5 import uic
 from PyQt5.QtCore import Qt
 
-mainDlg = uic.loadUiType("C:\\Users\\심운섭\\Desktop\\PYTHON\\sql\\student_main.ui")[0]
-deleteDlg = uic.loadUiType("C:\\Users\\심운섭\\Desktop\\PYTHON\\sql\\student_delete.ui")[0]
-changeDlg = uic.loadUiType("C:\\Users\\심운섭\\Desktop\\PYTHON\\sql\\student_change.ui")[0]
+mainDlg = uic.loadUiType("student_main.ui")[0]
+deleteDlg = uic.loadUiType("student_delete.ui")[0]
+changeDlg = uic.loadUiType("student_change.ui")[0]
 
+
+# Change Dlg -------------------------------------------------------------------------------------------------------------------------------------------
 class CChangeDlg(QDialog, changeDlg):
 	def __init__(self):
 		super().__init__()
 		self.setupUi(self)
 		self.show()
 		global total
-		self.id = 0
+		self.change_id = 0
 
-		self.setID(id)
-		self.getID()
 
 		self.ChangeDlg_lineEdit_name.setEnabled(False)
 		self.ChangeDlg_btn_Fine.clicked.connect(self.ChangeDlg_Button_Find)
@@ -25,31 +27,27 @@ class CChangeDlg(QDialog, changeDlg):
 		self.ChangeDlg_btn_Close.clicked.connect(self.close)
 
 
-
+# Change Dlg Function-------------------------------------------------------------------------------------------------------------------------------
+	# ID 찾기
 	def ChangeDlg_Button_Find(self):
-		change_id = self.ChangeDlg_lineEdit_id.text()
-		if change_id in total.keys():
-			message = QMessageBox.question(self,'Change', f'Do you want to change the information of ID {change_id}?', QMessageBox.Yes | QMessageBox.No)
+		self.change_id = self.ChangeDlg_lineEdit_id.text()
+		if self.change_id in total.keys():
+			message = QMessageBox.question(self,'Change', f'Do you want to change the information of ID {self.change_id}?', QMessageBox.Yes | QMessageBox.No)
 			if message == QMessageBox.Yes:
 				self.ChangeDlg_lineEdit_name.setEnabled(True)
-				self.setID(change_id)
 		else:
-			QMessageBox.warning(self,'Change', f'ID {change_id} does not exist!')
+			QMessageBox.warning(self,'Change', f'ID {self.change_id} does not exist!')
 
+	# 내용 수정
 	def ChangeDlg_Button_Change(self):
-		change_id = self.getID()
 		change_name = self.ChangeDlg_lineEdit_name.text()
 		message = QMessageBox.question(self,'Change', f'Do you want to change the information {change_name}?', QMessageBox.Yes | QMessageBox.No)
 		if message == QMessageBox.Yes:
-			total[change_id] = [change_name]
+			total[self.change_id] = change_name
+			sqltest.changeDB(change_name, self.change_id)
+			
 
-	def setID(self, id):
-		self.id = id
-
-	def getID(self):
-		return self.id
-
-
+# Delete Dlg -------------------------------------------------------------------------------------------------------------------------------------------
 class CDeleteDlg(QDialog, deleteDlg):
 	def __init__(self):
 		super().__init__()
@@ -61,7 +59,8 @@ class CDeleteDlg(QDialog, deleteDlg):
 		self.DeleteDlg_btn_Delete.clicked.connect(self.DeleteDlg_Button_Delete)
 		self.DeleteDlg_btn_Close.clicked.connect(self.close)
 
-
+# Delete Dlg Function-------------------------------------------------------------------------------------------------------------------------------
+	# 삭제
 	def DeleteDlg_Button_Delete(self):
 		delete_id = self.DeleteDlg_lineEdit_id.text()
 		if delete_id in total.keys():
@@ -69,9 +68,11 @@ class CDeleteDlg(QDialog, deleteDlg):
 			if message == QMessageBox.Yes:
 				del total[delete_id]
 				sqltest.deleteDB(delete_id)
+		else:
+			QMessageBox.warning(self,'Delete', 'There are not ID to delete')
 	
 
-
+# Main Dlg -------------------------------------------------------------------------------------------------------------------------------------------
 class MyDialog(QWidget, mainDlg):
 	def __init__(self):
 		super().__init__()
@@ -79,47 +80,83 @@ class MyDialog(QWidget, mainDlg):
 
 		global total
 		total = {}
+		total = sqltest.openDB()
 		self.id = 0
 
-		self.btn_add.clicked.connect(self.Button_Save)
+		self.btn_add.clicked.connect(self.Button_InformationAdd)
 		self.btn_delete.clicked.connect(self.Button_DeleteDlg_Show)
 		self.btn_change.clicked.connect(self.Button_ChangeDlg_Show)
 		self.btn_printAll.clicked.connect(self.Print_All)
+		self.btn_save.clicked.connect(self.Button_Save)
+		self.btn_close.clicked.connect(self.Button_Close)
 
 		self.tableWidget.setColumnCount(2)
 		self.tableWidget.setHorizontalHeaderLabels(["ID", "이름"])
 
-	# Main Dlg----------------------------------------------------------------------------------------------------------------------------------------------------
-	def Button_Save(self):
+# Main Dlg Function-------------------------------------------------------------------------------------------------------------------------------
+	
+	# 정보 추가
+	def Button_InformationAdd(self):
 		id = self.lineEdit_id.text()
 		if id == '':
 			QMessageBox.warning(self,'ID', 'ID를 입력해주세요')
+		elif id in total.keys():
+			QMessageBox.warning(self,'ID', '중복 된 ID 입니다. 다른 ID를 입력해주세요')
 
 		name = self.lineEdit_name.text()
 		if name == '':
 			QMessageBox.warning(self,'이름', '이름을 입력해주세요')
 		
 		if id != '' and name != '':
-			total[id] = [name]
+			total[id] = name
 			sqltest.intoDB(id, name)
+	
+	# 정보 저장
+	def Button_Save(self):
+		message = QMessageBox.question(self,'save', '저장하시겠습니까??', QMessageBox.Yes | QMessageBox.No)
+		sqltest.saveDB(message)
+		
+	# 종료
+	def Button_Close(self):
+		result = sqltest.DB(total)
+		if True == result:
+			sqltest.closeDB()
+			self.close()
+		else:
+			message = QMessageBox.question(self,'close', '변경 된 내용이 있습니다. 저장 후 종료하시겠습니까?', QMessageBox.Yes | QMessageBox.No)
+			if message == QMessageBox.Yes:
+				sqltest.saveDB(message)
+				sqltest.closeDB()
+				self.close()
+			else:
+				sqltest.closeDB()
+				self.close()
 
+	# 우측상단 종료
+	def closeEvent(self, a0: QCloseEvent):
+		self.Button_Close()
 
+	# 삭제 버튼 다이얼로그
 	def Button_DeleteDlg_Show(self):
 		deleteDlg = CDeleteDlg()
 		deleteDlg.exec_()
 
-
+	# 수정 버튼 다이얼로그
 	def Button_ChangeDlg_Show(self):
 		changeDlg = CChangeDlg()
 		changeDlg.exec_()
 
-
+	# 전체리스트 출력
 	def Print_All(self):
 		self.tableWidget.setRowCount(len(total))
 		for i, key in enumerate(total.keys()):
 			self.tableWidget.setItem(i, 0, QTableWidgetItem(str(key)))
-			for j, value in enumerate(total.get(key)):
-				self.tableWidget.setItem(i, j + 1, QTableWidgetItem(str(value)))
+			value = total.get(key)
+			if isinstance(value, (list, tuple)):
+				for j, v in enumerate(total.get(key)):
+					self.tableWidget.setItem(i, j + 1, QTableWidgetItem(str(v)))
+			else:
+				self.tableWidget.setItem(i, 1, QTableWidgetItem(str(value)))
 
 
 	
