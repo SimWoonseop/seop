@@ -45,7 +45,6 @@ def DB(total):
   total_DB = {}
   for row in result:
     total_DB[row['id']] = row['userName']
-    print(total_DB)
 
   if total == total_DB:
     return True

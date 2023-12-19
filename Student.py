@@ -4,7 +4,7 @@ from PyQt5.QtGui import QCloseEvent
 import sqltest
 from PyQt5.QtWidgets import *
 from PyQt5 import uic
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import *
 
 mainDlg = uic.loadUiType("student_main.ui")[0]
 deleteDlg = uic.loadUiType("student_delete.ui")[0]
@@ -37,6 +37,7 @@ class CChangeDlg(QDialog, changeDlg):
 				self.ChangeDlg_lineEdit_name.setEnabled(True)
 		else:
 			QMessageBox.warning(self,'Change', f'ID {self.change_id} does not exist!')
+			self.ChangeDlg_lineEdit_id.clear()
 
 	# 내용 수정
 	def ChangeDlg_Button_Change(self):
@@ -45,6 +46,8 @@ class CChangeDlg(QDialog, changeDlg):
 		if message == QMessageBox.Yes:
 			total[self.change_id] = change_name
 			sqltest.changeDB(change_name, self.change_id)
+			self.ChangeDlg_lineEdit_id.clear()
+			self.ChangeDlg_lineEdit_name.clear()
 			
 
 # Delete Dlg -------------------------------------------------------------------------------------------------------------------------------------------
@@ -68,12 +71,15 @@ class CDeleteDlg(QDialog, deleteDlg):
 			if message == QMessageBox.Yes:
 				del total[delete_id]
 				sqltest.deleteDB(delete_id)
+				self.DeleteDlg_lineEdit_id.clear()
 		else:
 			QMessageBox.warning(self,'Delete', 'There are not ID to delete')
+			self.DeleteDlg_lineEdit_id.clear()
 	
 
 # Main Dlg -------------------------------------------------------------------------------------------------------------------------------------------
-class MyDialog(QWidget, mainDlg):
+class MyDialog(QDialog, mainDlg):
+	
 	def __init__(self):
 		super().__init__()
 		self.setupUi(self)
@@ -88,7 +94,7 @@ class MyDialog(QWidget, mainDlg):
 		self.btn_change.clicked.connect(self.Button_ChangeDlg_Show)
 		self.btn_printAll.clicked.connect(self.Print_All)
 		self.btn_save.clicked.connect(self.Button_Save)
-		self.btn_close.clicked.connect(self.Button_Close)
+		self.btn_close.clicked.connect(self.close)
 
 		self.tableWidget.setColumnCount(2)
 		self.tableWidget.setHorizontalHeaderLabels(["ID", "이름"])
@@ -110,6 +116,8 @@ class MyDialog(QWidget, mainDlg):
 		if id != '' and name != '':
 			total[id] = name
 			sqltest.intoDB(id, name)
+			self.lineEdit_id.clear()
+			self.lineEdit_name.clear()
 	
 	# 정보 저장
 	def Button_Save(self):
@@ -121,16 +129,16 @@ class MyDialog(QWidget, mainDlg):
 		result = sqltest.DB(total)
 		if True == result:
 			sqltest.closeDB()
-			self.close()
+			self.accept()
 		else:
 			message = QMessageBox.question(self,'close', '변경 된 내용이 있습니다. 저장 후 종료하시겠습니까?', QMessageBox.Yes | QMessageBox.No)
 			if message == QMessageBox.Yes:
 				sqltest.saveDB(message)
 				sqltest.closeDB()
-				self.close()
+				self.accept()
 			else:
 				sqltest.closeDB()
-				self.close()
+				self.accept()
 
 	# 우측상단 종료
 	def closeEvent(self, a0: QCloseEvent):
@@ -157,7 +165,6 @@ class MyDialog(QWidget, mainDlg):
 					self.tableWidget.setItem(i, j + 1, QTableWidgetItem(str(v)))
 			else:
 				self.tableWidget.setItem(i, 1, QTableWidgetItem(str(value)))
-
 
 	
 if __name__ == '__main__':
